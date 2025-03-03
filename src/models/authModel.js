@@ -6,5 +6,4 @@ const authSchema = new mongoose.Schema({
     password: { type: String, required: true }
 })
 
-// module.exports = { Auth: authSchema }
-module.exports = mongoose.model('Auth',authSchema)
+module.exports = mongoose.model('Auth', authSchema)

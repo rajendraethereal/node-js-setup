@@ -4,13 +4,12 @@ const AuthController = {
     async signup(req, res, next) {
         try {
             const user = await AuthService.signupUser(req)
-            const {_id,email,username} =  user;
+            const { _id, email, username } = user;
 
-            res.status(201).json({message:"user signed up successfully ",data:{_id,email,username}})
+            res.status(201).json({ message: "user signed up successfully ", data: { _id, email, username } })
         } catch (error) {
             next(error)
         }
-
     }
 }
 module.exports = AuthController

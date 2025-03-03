@@ -1,5 +1,5 @@
 const authModel = require('../models/authModel');
-
+const bcrypt = require('bcrypt');
 class AuthService {
 
     static async signupUser(req) {
@@ -12,7 +12,8 @@ class AuthService {
             throw error;
         }
 
-        return await authModel.create({ username, email, password });
+        const hashPassword = await bcrypt.hash(password, Number(process.env.SALT_ROUND))
+        return await authModel.create({ username, email, password: hashPassword });
     }
 }
 module.exports = AuthService
