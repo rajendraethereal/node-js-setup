@@ -10,6 +10,15 @@ const AuthController = {
         } catch (error) {
             next(error)
         }
+    },
+
+    async login(req, res, next) {
+        try {
+            const user = await AuthService.loginUser(req);
+        } catch (error) {
+            next(error)
+        }
+
     }
 }
 module.exports = AuthController
