@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const authModel = require('../models/authModel');
 const AppError = require('../utils/AppError');
 const { generateAccessToken, generateRefreshToken } = require('../utils/tokenGenerate');
+const redisClient = require('../utils/redisClient.js');
 
 class AuthService {
 
@@ -36,6 +37,9 @@ class AuthService {
 
         const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
+
+        await redisClient.set(user._id.toString(), refreshToken, "EX", 7 * 24 * 60 * 60);
+
         user.refreshToken = refreshToken;
         user.save();
 
@@ -53,8 +57,12 @@ class AuthService {
             req.user = decoded;
         });
 
+        const verifyToken = await redisClient.get(req.user.id);
+
+        if (verifyToken !== token.split(" ")[1]) throw new AppError("Invalid Token", 400)
+
         const accessToken = generateAccessToken(req.user.id);
-        
+
         return accessToken
     }
 }
