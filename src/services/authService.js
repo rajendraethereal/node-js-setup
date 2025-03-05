@@ -38,13 +38,11 @@ class AuthService {
         const accessToken = generateAccessToken(user._id);
         const refreshToken = generateRefreshToken(user._id);
 
-        await redisClient.set(user._id.toString(), refreshToken, "EX", 7 * 24 * 60 * 60);
-
+        await redisClient.sadd(user._id.toString(), refreshToken);
         user.refreshToken = refreshToken;
         user.save();
 
         return { id: user._id, name: user.username, email, accessToken, refreshToken }
-
     }
 
     static async refreshToken(req) {
@@ -64,6 +62,28 @@ class AuthService {
         const accessToken = generateAccessToken(req.user.id);
 
         return accessToken
+    }
+
+    static async logout(req) {
+        const token = req.headers["authorization"];
+        const accessToken = token.split(" ")[1]
+
+        const decodedAccessToken = jwt.verify(accessToken, process.env.ACCESS_SECRET, (err, decoded) => {
+            if (err) throw new AppError("Invalid Token", 400);
+            req.user = decoded;
+        });
+
+        const expiryTime = decodedAccessToken.exp - Math.floor(Date.now() / 1000);
+
+        if (expiryTime > 0) {
+            await redisClient.sadd(`blacklist:${req.user.id}`, `blacklist:${accessToken}`, "EX", expiryTime);
+        }
+
+        const data = await redisClient.del(req.user.id);
+
+        if (!data) throw new AppError("Session expired or logged in from another device");
+
+        return { message: "successfully logout" }
     }
 }
 module.exports = AuthService

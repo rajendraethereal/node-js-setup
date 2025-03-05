@@ -29,6 +29,16 @@ const AuthController = {
         } catch (error) {
             next(error)
         }
+    },
+
+    async logout(req, res, next) {
+        try {
+            const logout = await AuthService.logout(req);
+            res.status(200).json(logout)
+        } catch (error) {
+            next(error)
+        }
+
     }
 }
 module.exports = AuthController
