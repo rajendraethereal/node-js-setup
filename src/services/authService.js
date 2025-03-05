@@ -1,6 +1,9 @@
-const authModel = require('../models/authModel');
 const bcrypt = require('bcrypt');
-const { default: AppError } = require('../utils/AppError');
+const jwt = require('jsonwebtoken');
+const authModel = require('../models/authModel');
+const AppError = require('../utils/AppError');
+const { generateAccessToken, generateRefreshToken } = require('../utils/tokenGenerate');
+
 class AuthService {
 
     static async signupUser(req) {
@@ -17,21 +20,42 @@ class AuthService {
         return await authModel.create({ username, email, password: hashPassword });
     }
 
-    static async loginUser(req){
-        const {email,password} = req.body
+    static async loginUser(req) {
+        const { email, password } = req.body
 
-        const user = authModel.findOne({email});
-        if(!user){
-            throw new AppError("User already exists", 400);
+        const user = await authModel.findOne({ email });
+
+        if (!user) {
+            throw new AppError("email not exists", 400);
         }
 
-        const hashPassword = await bcrypt.compare(user.password,password);
-        if(!hashPassword){
+        const hashPassword = await bcrypt.compare(password, user.password);
+        if (!hashPassword) {
             throw new AppError("Password does not match", 400);
         }
 
+        const accessToken = generateAccessToken(user._id);
+        const refreshToken = generateRefreshToken(user._id);
+        user.refreshToken = refreshToken;
+        user.save();
 
+        return { id: user._id, name: user.username, email, accessToken, refreshToken }
 
+    }
+
+    static async refreshToken(req) {
+
+        const token = req.headers["authorization"];
+        if (!token) throw new AppError("Access Denied", 400);
+
+        jwt.verify(token.split(" ")[1], process.env.REFRESH_SECRET, (err, decoded) => {
+            if (err) throw new AppError("Invalid Token", 400);
+            req.user = decoded;
+        });
+
+        const accessToken = generateAccessToken(req.user.id);
+        
+        return accessToken
     }
 }
 module.exports = AuthService

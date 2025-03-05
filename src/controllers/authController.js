@@ -1,6 +1,7 @@
 const AuthService = require("../services/authService");
 
 const AuthController = {
+
     async signup(req, res, next) {
         try {
             const user = await AuthService.signupUser(req)
@@ -15,10 +16,19 @@ const AuthController = {
     async login(req, res, next) {
         try {
             const user = await AuthService.loginUser(req);
+            res.status(200).json({ message: "user login successfully ", data: user })
         } catch (error) {
             next(error)
         }
+    },
 
+    async refreshToken(req, res, next) {
+        try {
+            const user = await AuthService.refreshToken(req);
+            res.status(200).json({ message: "request token successfully ", data: user })
+        } catch (error) {
+            next(error)
+        }
     }
 }
 module.exports = AuthController
